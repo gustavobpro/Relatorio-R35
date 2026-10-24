@@ -1,0 +1,31 @@
+name: Atualizar Relatório R35
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'   # roda sozinho a cada 20 minutos
+  workflow_dispatch: {}       # permite rodar manualmente
+
+permissions:
+  contents: write
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install openpyxl
+      - name: Baixar planilha R35 do Google Drive
+        run: |
+          curl -L "https://docs.google.com/spreadsheets/d/1oH9ucIP4XQb7oL7x2Qc-3HglPni-P5xBtK1oi68C3Q4/export?format=xlsx" -o planilha.xlsx
+      - name: Gerar relatório
+        run: python gerar_relatorio.py planilha.xlsx R35 index.html
+      - name: Publicar (só se algo mudou)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --staged --quiet || git commit -m "Atualização automática R35"
+          git push
